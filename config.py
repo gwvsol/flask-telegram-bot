@@ -1,7 +1,7 @@
 class Config(object):
-    ROOT_USER = {'login': 'root', 'passw': 'b4b8daf4b8ea9d39568719e1e320076f'}
-    USER_PERMISSION = None
-    DB_CONFIG = { 'host': 'localhost', 'port': 28015, }
-    DB_NAME = 'data'
-    DB_TAB = {'tab_1': 'data', 'tab_2': 'log', 'tab_3': 'root'}
-    DB_CONT = {'login': None, 'name': None, 'passw': None, 'gender': None, 'reg_date': None, 'ch_date': None, 'phone': None, 'email': None}
+    API_TOKEN = '742304158:AAFeunhPvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
+    WEBHOOK_HOST = 'srv00.hldns.ru'
+    WEBHOOK_PORT = 8443                    # 443, 80, 88 or 8443 (port need to be 'open')
+    WEBHOOK_LISTEN = '0.0.0.0'
+    WEBHOOK_SSL_CERT = 'webhook_cert.pem'  # Path to the ssl certificate
+    WEBHOOK_SSL_PRIV = 'webhook_pkey.pem'  # Path to the ssl private key
