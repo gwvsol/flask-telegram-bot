@@ -26,6 +26,72 @@ WEBHOOK_SSL_CERT = app.config['WEBHOOK_SSL_CERT']
 WEBHOOK_SSL_PRIV = app.config['WEBHOOK_SSL_PRIV']
 
 
+#===================== Bot Telegram ====================================
+@bot.message_handler(commands=['start'])
+def handle_text(message):
+    #print(message.chat.id)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['CREATE_USER'])
+    user_markup.row(app.config['EDIT_PROFILE'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, \
+    app.config['SELECT_MENU'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda mess: app.config['MAIN_MENU'] == mess.text, content_types=['text'])
+def main_menu(message):
+    #print(message.chat.id)
+    #print(message.text)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['CREATE_USER'])
+    user_markup.row(app.config['EDIT_PROFILE'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK']) 
+    bot.send_message(message.from_user.id, app.config['SELECT_MENU'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda mess: app.config['CREATE_USER'] == mess.text, content_types=['text'])
+def main_menu(message):
+    #print(message.chat.id)
+    #print(message.text)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, \
+    app.config['NEW_USER'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda mess: app.config['EDIT_PROFILE'] == mess.text, content_types=['text'])
+def main_menu(message):
+    #print(message.chat.id)
+    #print(message.text)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, \
+    app.config['LOGIN'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda mess: app.config['UPDATES'] == mess.text, content_types=['text'])
+def handle_text(message):
+    #print(message.chat.id)
+    #print(message.text)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    bot.send_message(message.chat.id, \
+    app.config['UPDATE'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda mess: app.config['FEEDBACK'] == mess.text, content_types=['text'])
+def handle_text(message):
+    #print(message.chat.id)
+    #print(message.text)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    bot.send_message(message.chat.id, \
+    app.config['QUESTIONS'], reply_markup=user_markup)
+
+
+#============================= Flask =================================
 # Process webhook calls
 @app.route(WEBHOOK_URL_PATH, methods=['POST'])
 def webhook():
@@ -37,23 +103,6 @@ def webhook():
     else:
         flask.abort(403)
 
-
-# Handle '/start' and '/help'
-@bot.message_handler(commands=['help', 'start'])
-def send_welcome(message):
-    bot.reply_to(message,
-                 ("Привет, Я EchoBot.\n"
-                  "Я могу повторить все ваши слова."))
-
-
-# Handle all other messages
-@bot.message_handler(func=lambda message: True, content_types=['text'])
-def echo_message(message):
-    bot.reply_to(message, message.text)
-    
-#============================================    
-
-#=================================
 
 # Remove webhook, it fails sometimes the set if there is a previous webhook
 bot.remove_webhook()
