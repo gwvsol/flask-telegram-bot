@@ -3,6 +3,7 @@ from rethinkdbcm import UseDatabase
 from hashlib import md5
 from datetime import datetime
 from config import Config
+from config import Status
 import logging
 import telebot
 from telebot import types

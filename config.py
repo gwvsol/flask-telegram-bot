@@ -1,3 +1,5 @@
+from enum import Enum
+
 class Config(object):
 #===== Set Bot Telegram =======
     API_TOKEN = '742304158:AAFeunhPvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
@@ -10,7 +12,7 @@ class Config(object):
     DB_CONFIG = { 'host': 'localhost', 'port': 28015, }
     DB_NAME = 'bot'
     DB_TAB = {'tab_1': 'chat_log', 'tab_2': 'app_log'}
-    DB_CONT = {'login': None, 'name': None, 'passw': None, 'gender': None, 'phone': None, 'email': None}
+    DB_CONT = {'id': None, 'login': None, 'name': None, 'passw': None, 'gender': None, 'phone': None, 'email': None}
 #===== Message ================
     CREATE_USER = 'Создание нового пользователя'
     EDIT_PROFILE = 'Редактирование профиля'
@@ -22,3 +24,12 @@ class Config(object):
     LOGIN = 'Login пользователя:'
     UPDATE = 'Обновления и дополнительная информация: https://t.me/flaskbott'
     QUESTIONS = 'Вопросы и предложения:\n • @jwvsolmf\n • jwvsol@yandex.com'
+
+class Status(Enum):
+    START = '0'  # Начало нового диалога
+    LOGIN = '1'
+    NAME = '2'
+    PHONE = '3'
+    EMAIL = '4'
+    GENDER = '5'
+    PASSW = '6'
