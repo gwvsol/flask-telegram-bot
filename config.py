@@ -15,7 +15,7 @@ class Config(object):
     DB_NAME = {'db_bot': 'db_bot', 'db_api': 'data'}
     TAB_BOT = {'chat_log': 'chat_log', 'app_log': 'app_log', 'root': 'root'}
     TAB_API = {'data': 'data', 'log': 'log', 'root': 'root'}
-    USER_PERMISSION = None
+    USER_PERMISS = {}
     DB_CONT = {'login': None, 'name': None, 'passw': None, 'gender': None, 'phone': None, 'email': None}
 #========= Menu ===============
     USER_DATA = 'Данные пользователя'
@@ -23,14 +23,25 @@ class Config(object):
     EDIT_PROFILE = 'Редактирование'
     PASSW_RECOV = 'Восстановление'
     SETTING = 'Настройка'
+    BASK_SET = 'Возврат к настройкам'
     UPDATES = 'О приложении'
     FEEDBACK = 'Как связаться'
     MAIN_MENU = 'Главное меню'
+    CREATE_DBASE = 'Создесть БД'
+    CREATE_DB_TAB = 'Создать таблицы БД'
 #===== Message ================
-    SELECT_MENU = 'Выберите пункт меню:'
+    SELECT_MENU = 'Выберите пункт меню: '
     NEW_USER = 'Login нового пользователя:'
     LOGIN = 'Login:'
+    LOGIN_ERR = 'Ошибка, Login не существует! Введите Login:'
     EMAIL = 'Введите номер телефона:'
+    PASSW = 'Введите пароль:'
+    PASSW_OK = 'Поздравляю, вы ввели верный Login и Passwd'
+    LOGIN_SUPERUSER = 'Введите Login суперпользователя'
+    PASSW_SUPERUSER = 'Введите пароль суперпользователя'
+    FULL_SET = 'Поздравляю, вы выполнили основные настройки приложения, теперь вы можете создать первого пользователя.'
+    PASSW_ERR = 'Ошибка, Passwd не верный. Введите Passwd:'
+    NO_ACCESS = 'У вас нет прав: '
     UPDATE = 'Обновления и дополнительная информация: https://t.me/flaskbott'
     QUESTIONS = 'Вопросы и предложения:\n • @jwvsolmf\n • jwvsol@yandex.com'
 
@@ -42,4 +53,7 @@ class Status(Enum):
     PHONE = '4'
     EMAIL = '5'
     GENDER = '6'
+    CHECKED = '7'
+    SUPERUSER = '8'
+    SUPER_PASS = '9'
 
