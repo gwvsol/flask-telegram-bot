@@ -48,8 +48,8 @@ def save_user(i=None, l=None, p=None, st=None):
         USER['login'] = l
     if p:
         USER['passw'] = p
-#================================================
-
+#==========================================================
+#=========== Проверка пароля и его шифрование =============
 def setpasswd(login: str, passw: str) -> str:
     """Преобразование пароля и логина в хеш MD5"""
     return str(md5(str(passw+login).lower().encode('utf-8')).hexdigest())
@@ -74,7 +74,7 @@ def verify(username=None, password=None):
             return None
     else:
         return None
-
+# ======================================================================
 
 #===================== Bot Telegram ====================================
 # Старт бота
@@ -153,19 +153,21 @@ def main_menu(message):
     bot.send_message(message.from_user.id, \
         app.config['EMAIL'], reply_markup=user_markup)
 
+
 # ======================================================================
 # ================= Меню Настройка приложения ==========================
 @bot.message_handler(func=lambda message: app.config['SETTING'] == message.text, content_types=['text'])
 def main_menu(message):
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
-    user_markup.row(app.config['BASK_SET'])
+    #user_markup.row(app.config['BASK_SET'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     save_user(i=message.chat.id, st=ST.LOGIN.value)
     bot.send_message(message.from_user.id, \
         app.config['LOGIN'], reply_markup=user_markup)
 
-# Возврат к меню Настройки
+
+# Возврат в главное меню
 @bot.message_handler(func=lambda message: app.config['BASK_SET'] == message.text, content_types=['text'])
 def main_menu(message):
     user_markup = types.ReplyKeyboardMarkup(True, False)
@@ -176,7 +178,8 @@ def main_menu(message):
     bot.send_message(message.from_user.id, \
         app.config['LOGIN'], reply_markup=user_markup)
 
-# Запрос ввести Login для аторизации
+
+# Запрос Login для аторизации
 @bot.message_handler(func=lambda message: USER[message.chat.id] == ST.LOGIN.value)
 def user_entering_name(message):
     if verify(username=message.text) == message.text:
@@ -186,71 +189,85 @@ def user_entering_name(message):
         bot.send_message(message.chat.id, app.config['LOGIN_ERR'])
         return
 
-# Запрос ввести Passwd для аторизации, Удаление БД и Создание таблиц в БД
+
+# Запрос Passwd для аторизации, Удаление БД и Создание таблиц в БД
 @bot.message_handler(func=lambda message: USER[message.chat.id] == ST.PASSW.value)
 def user_entering_passw(message):
     if verify(password=message.text) == setpasswd(USER['login'], message.text):
         passw = setpasswd(USER['login'], message.text)
         save_user(i=message.chat.id, l=message.text, p=passw, st=ST.CHECKED.value)
         bot.send_message(message.chat.id, app.config['PASSW_OK'])
-        if DB_BOT not in DB.db_creat(DB_BOT).keys():
-            user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'])
+        if DB_BOT not in DB.db_creat(DB_BOT).keys(): # Если нет БД, выводим меню Создать БД
             user_markup.row(app.config['CREATE_DBASE'])
-            bot.send_message(message.from_user.id, \
-                app.config['SELECT_MENU'] + app.config['CREATE_DBASE'], reply_markup=user_markup)
-        else:
-            user_markup = types.ReplyKeyboardMarkup(True, False)
-            m = 'not found'
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        else: # Если БД имеется, но нет таблиц выводим меню Создать таблицы и Удалить БД
+            m = 'not found' 
             if m in str(DB.tab_all(DB_BOT)):
-                user_markup.row(app.config['CREATE_DB_TAB'])
-            else:
+                user_markup.row(app.config['CREATE_DB_TAB'], app.config['DELETE_DBASE'])
+            else: # Если таблицы имеются, выводим меню Просмотр списка таблиц, Удалить таблицы и Удалить БД
                 user_markup.row(app.config['LIST_TABLES'], app.config['DELETE_TABLES'])
                 user_markup.row(app.config['DELETE_DBASE'])
-                bot.send_message(message.from_user.id, \
-                    app.config['SELECT_MENU'], reply_markup=user_markup)
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, \
+                app.config['SELECT_MENU'], reply_markup=user_markup)
     else:
         bot.send_message(message.chat.id, app.config['PASSW_ERR'])
         return
 
+
 # Создаем БД для приложения
 @bot.message_handler(func=lambda message: app.config['CREATE_DBASE'] == message.text, content_types=['text'])
 def set_db(message):
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
     if USER[message.chat.id] == ST.CHECKED.value:
-        user_markup = types.ReplyKeyboardMarkup(True, False)
-        user_markup.row(app.config['CREATE_DB_TAB'])
+        save_user(i=message.chat.id, st=ST.CHECKED.value)
+        DB.db_creat(DB_BOT)
         if DB_BOT not in DB.db_creat(DB_BOT).keys():
-            save_user(i=message.chat.id, st=ST.CHECKED.value)
-            bot.send_message(message.from_user.id, \
-                app.config['SELECT_MENU'] + app.config['CREATE_DB_TAB'], reply_markup=user_markup)
+            user_markup.row(app.config['CREATE_DBASE'])
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+            bot.send_message(message.from_user.id, app.config['DB_NO_CREATE'], reply_markup=user_markup)
         else:
+            user_markup.row(app.config['CREATE_DB_TAB'])
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
             bot.send_message(message.from_user.id, \
-                app.config['DATABASE_EXISTS'] +'\n'+ app.config['CREATE_DB_TAB'] +'\n'+ \
-                app.config['DELET_DB'], reply_markup=user_markup)
+                app.config['DB_OK'], reply_markup=user_markup)
+        bot.send_message(message.from_user.id, \
+                app.config['SELECT_MENU'], reply_markup=user_markup)
     else:
-        user_markup = types.ReplyKeyboardMarkup(True, False)
-        user_markup.row(app.config['MAIN_MENU'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
         bot.send_message(message.chat.id, app.config['NO_ACCESS'] + app.config['CREATE_DBASE'])
-        
+
+
 # Удаление БД приложения
 @bot.message_handler(func=lambda message: app.config['DELETE_DBASE'] == message.text, content_types=['text'])
 def set_db(message):
+    save_user(i=message.chat.id, st=ST.CHECKED.value)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
     if USER[message.chat.id] == ST.CHECKED.value:
         if DB_BOT not in DB.db_delete(DB_BOT).keys():
-            save_user(i=message.chat.id, st=ST.CHECKED.value)
-            user_markup = types.ReplyKeyboardMarkup(True, False)
             user_markup.row(app.config['CREATE_DBASE'])
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
             bot.send_message(message.from_user.id, \
-                app.config['SELECT_MENU'] + app.config['CREATE_DBASE'], reply_markup=user_markup)
+                app.config['DB_DEL_OK'], reply_markup=user_markup)
+            bot.send_message(message.from_user.id, \
+                app.config['SELECT_MENU'], reply_markup=user_markup)
         else:
+            user_markup.row(app.config['DELETE_DBASE'])
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
             bot.send_message(message.from_user.id, \
-                app.config['DATABASE_EXISTS'] +'\n'+ app.config['CREATE_DB_TAB'] +'\n'+ \
-                app.config['DELET_DB'], reply_markup=user_markup)
+                app.config['DB_NO_DELETE'], reply_markup=user_markup)
+            bot.send_message(message.from_user.id, \
+                app.config['SELECT_MENU'], reply_markup=user_markup)
     else:
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
         bot.send_message(message.chat.id, app.config['NO_ACCESS'] + app.config['CREATE_DBASE'])
+
 
 # Создаем таблицы в БД для приложения
 @bot.message_handler(func=lambda message: app.config['CREATE_DB_TAB'] == message.text, content_types=['text'])
@@ -264,7 +281,8 @@ def set_tab(message):
         a = 0
         for n in range(len(name)):
             m = DB.tab_creat(DB_BOT, name[n])
-            if name[n] not in str(*list(m.keys())):
+            ok = 'tables_created'
+            if ok in list(m.keys()):
                 t += 1
                 bot.send_message(message.chat.id, 'Таблица {} {} создана'.format(t, name[n]))
             else:
@@ -276,15 +294,20 @@ def set_tab(message):
             bot.send_message(message.from_user.id, \
                 app.config['SELECT_MENU'], reply_markup=user_markup)
         elif t:
-            remove_markup = types.ReplyKeyboardRemove(True)
             save_user(i=message.chat.id, st=ST.SUPERUSER.value)
-            bot.send_message(message.from_user.id, app.config['LOGIN_SUPERUSER'], reply_markup=remove_markup)
+            user_markup = types.ReplyKeyboardMarkup(True, False)
+            user_markup.row(app.config['MAIN_MENU'])
+            user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+            bot.send_message(message.from_user.id, app.config['TAB_OK'])
+            bot.send_message(message.from_user.id, app.config['SUPERUSER'])
+            bot.send_message(message.from_user.id, app.config['LOGIN_SUPERUSER'], reply_markup=user_markup)
     else:
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
         bot.send_message(message.chat.id, app.config['NO_ACCESS'] + app.config['CREATE_DB_TAB'], \
             reply_markup=user_markup)
+
 
 # Перечень таблиц в БД
 @bot.message_handler(func=lambda message: app.config['LIST_TABLES'] == message.text, content_types=['text'])
@@ -298,6 +321,21 @@ def set_db(message):
         bot.send_message(message.from_user.id, \
             app.config['SELECT_MENU'], reply_markup=user_markup)
 
+
+# Удаление таблиц в БД
+@bot.message_handler(func=lambda message: app.config['DELETE_TABLES'] == message.text, content_types=['text'])
+def set_db(message):
+    if USER[message.chat.id] == ST.CHECKED.value:
+        for m in DB.tab_all(DB_BOT):
+            DB.tab_delete(DB_BOT, m)
+            bot.send_message(message.from_user.id, 'Таблица {} удалена из БД {}'.format(m, DB_BOT))
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'], app.config['CREATE_DB_TAB'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, \
+            app.config['SELECT_MENU'], reply_markup=user_markup)
+
+
 # Запрос Login для создания суперпользователя
 @bot.message_handler(func=lambda message: USER[message.chat.id] == ST.SUPERUSER.value)
 def set_superuser(message):
@@ -305,6 +343,7 @@ def set_superuser(message):
     save_user(i=message.chat.id, l=message.text, st=ST.SUPER_PASS.value)
     print(USER)
     bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
+
 
 # Запрос Passwd для создания суперпользователя
 @bot.message_handler(func=lambda message: USER[message.chat.id] == ST.SUPER_PASS.value)
