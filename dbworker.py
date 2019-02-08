@@ -7,10 +7,10 @@ class UseDB(object):
 
 # Проверка наличия записи в таблице
     def presence_id(self, use_db, name_t, id_mane, req):
-        with UseDatabase(self.config, use_db) as db:
+        with UseDatabase(self.config) as db:
             try:
-                out = db.countid(name_t, id_mane, req)
-                print(out)
+                out = db.countid(use_db, name_t, id_mane, req)
+#               print(out)
                 return out
             except:
                 return False
@@ -69,10 +69,10 @@ class UseDB(object):
 # Новая запись в таблицу в БД 
 # (при подключении к БД необходимо указать к какой БД подключаемся)
     def new_record(self, use_db, use_tab, json):
-        with UseDatabase(self.config, use_db) as db:
+        with UseDatabase(self.config) as db:
             try:
-                out = db.insert(use_tab, json)
-                print(out)
+                out = db.insert(use_db, use_tab, json)
+#                print(out)
                 return out
             except:
                 return False
@@ -80,21 +80,41 @@ class UseDB(object):
 # Получение всех записей из таблицы БД 
 # (при подключении к БД необходимо указать к какой БД подключаемся)
     def getall(self, use_db, use_tab):
-        with UseDatabase(self.config, use_db) as db:
+        with UseDatabase(self.config) as db:
             try:
-                out = db.gettasks(use_tab)
-                print(out)
+                out = db.gettasks(use_db, use_tab)
+#                print(out)
                 return out
             except:
                 return False
 
 # Получение записей из таблицы БД по ID 
 # (при подключении к БД необходимо указать к какой БД подключаемся)
-    def getonetask(self, use_db, use_tab, req):
-        with UseDatabase(self.config, use_db) as db:
+    def getrootuser(self, use_db, use_tab, req):
+        with UseDatabase(self.config) as db:
             try:
-                out = db.gettask(use_tab, req)
-                print(out)
+                return db.getroot(use_db, use_tab)[req]
+            except:
+                return False
+                
+# Получение записи о пользователе ROOT в БД 
+    def getonetask(self, use_db, use_tab, id_name):
+        with UseDatabase(self.config) as db:
+            try:
+                out = db.gettask(use_db, use_tab, id_name)
+#                print(out)
                 return out
             except:
                 return False
+                
+# Обновление записей в таблице БД по ID 
+# (при подключении к БД необходимо указать к какой БД подключаемся)
+    def updateonetask(self, use_db, use_tab, id_name, json):
+        with UseDatabase(self.config) as db:
+            try:
+                out = db.updetask(use_db, use_tab, id_name, json)
+#                print(out)
+                return out
+            except:
+                return False
+            
