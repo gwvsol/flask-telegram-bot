@@ -13,10 +13,20 @@ class Config(object):
 #===== Set Data Base ==========
     DB_CONFIG = { 'host': 'localhost', 'port': 28015, }
     DB_NAME = {'db_bot': 'db_bot', 'db_api': 'data'}
-    TAB_BOT = {'chat_log': 'chat_log', 'app_log': 'app_log', 'root': 'root'}
+    TAB_BOT = {'data': 'data', 'log': 'log', 'root': 'root'}
     TAB_API = {'data': 'data', 'log': 'log', 'root': 'root'}
     USER_PERMISS = {}
     DB_CONT = {'login': None, 'name': None, 'passw': None, 'gender': None, 'phone': None, 'email': None}
+    NAME_FIELD = {}
+    NAME_FIELD['id'] = 'ID'
+    NAME_FIELD['login'] = 'Логин'
+    NAME_FIELD['passw'] = 'Пароль'
+    NAME_FIELD['reg_date'] = 'Дата регистрации'
+    NAME_FIELD['ch_date'] = 'Дата изменения'
+    NAME_FIELD['name'] = 'Ф.И.О.'
+    NAME_FIELD['gender'] = 'Пол'
+    NAME_FIELD['phone'] = 'Номер телефона'
+    NAME_FIELD['email'] = 'Эл.почта'
 #========= Menu ===============
     USER_DATA = 'Данные пользователя'
     CREATE_USER = 'Создание'
@@ -33,6 +43,8 @@ class Config(object):
     CREATE_DB_TAB = 'Создать таблицы'
     LIST_TABLES = 'Список таблиц'
     DELETE_TABLES = 'Удалить таблицы'
+    CREATE_SU_USER = 'Создать админа'
+    CHENGE_PASSW_SU = 'Изменить пароль админа'
 #===== Message ================
     SELECT_MENU = 'Выберите пункт меню: '
     NEW_USER = 'Login нового пользователя:'
@@ -40,10 +52,11 @@ class Config(object):
     LOGIN_ERR = 'Ошибка, Login не существует! Введите Login:'
     EMAIL = 'Введите номер телефона:'
     PASSW = 'Введите пароль:'
-    SUPERUSER = 'Необходимо создать суперпользователя'
+    SUPERUSER = 'Создать админа'
     PASSW_OK = 'Поздравляю, вы ввели верный Login и Passwd'
-    LOGIN_SUPERUSER = 'Введите Login суперпользователя'
-    PASSW_SUPERUSER = 'Введите пароль суперпользователя'
+    LOGIN_SUPERUSER = 'Введите Login админа'
+    PASSW_SUPERUSER = 'Введите пароль админа'
+    SU_CREATE = 'Админ создан'
     DB_NO_CREATE = 'БД не создана'
     DB_OK = 'БД успешно создана'
     DB_DEL_OK = 'БД успешно удалена'
@@ -55,6 +68,7 @@ class Config(object):
     NO_ACCESS = 'У вас нет прав: '
     UPDATE = 'Обновления и дополнительная информация: https://t.me/flaskbott'
     QUESTIONS = 'Вопросы и предложения:\n • @jwvsolmf\n • jwvsol@yandex.com'
+# ======================================================================
 
 class Status(Enum):
     START = '0'  # Начало нового диалога

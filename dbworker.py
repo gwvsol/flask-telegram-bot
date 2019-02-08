@@ -9,7 +9,9 @@ class UseDB(object):
     def presence_id(self, use_db, name_t, id_mane, req):
         with UseDatabase(self.config, use_db) as db:
             try:
-                return db.countid(name_t, id_mane, req)
+                out = db.countid(name_t, id_mane, req)
+                print(out)
+                return out
             except:
                 return False
 
@@ -59,6 +61,40 @@ class UseDB(object):
             try:
                 out = db.del_tab(use_db, use_tab)
 #                print(out)
+                return out
+            except:
+                return False
+                
+
+# Новая запись в таблицу в БД 
+# (при подключении к БД необходимо указать к какой БД подключаемся)
+    def new_record(self, use_db, use_tab, json):
+        with UseDatabase(self.config, use_db) as db:
+            try:
+                out = db.insert(use_tab, json)
+                print(out)
+                return out
+            except:
+                return False
+                
+# Получение всех записей из таблицы БД 
+# (при подключении к БД необходимо указать к какой БД подключаемся)
+    def getall(self, use_db, use_tab):
+        with UseDatabase(self.config, use_db) as db:
+            try:
+                out = db.gettasks(use_tab)
+                print(out)
+                return out
+            except:
+                return False
+
+# Получение записей из таблицы БД по ID 
+# (при подключении к БД необходимо указать к какой БД подключаемся)
+    def getonetask(self, use_db, use_tab, req):
+        with UseDatabase(self.config, use_db) as db:
+            try:
+                out = db.gettask(use_tab, req)
+                print(out)
                 return out
             except:
                 return False
