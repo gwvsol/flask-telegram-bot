@@ -2,7 +2,7 @@
 from enum import Enum
 
 class Config(object):
-#===== Set Bot Telegram =======
+# ===== Set Bot Telegram =======
     API_TOKEN = '742304158:AAFeunhPvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
     WEBHOOK_HOST = 'srv00.hldns.ru'
     WEBHOOK_PORT = 8443                    # 443, 80, 88 or 8443 (port need to be 'open')
@@ -10,12 +10,23 @@ class Config(object):
     WEBHOOK_SSL_CERT = 'webhook_cert.pem'  # Path to the ssl certificate
     WEBHOOK_SSL_PRIV = 'webhook_pkey.pem'  # Path to the ssl private key
     ROOT_USER = {'login': 'root', 'passw': 'b4b8daf4b8ea9d39568719e1e320076f'}
-#===== Set Data Base ==========
+# ===== Set Data Base ==========
     DB_CONFIG = { 'host': 'localhost', 'port': 28015, }
     DB_NAME = {'db_bot': 'db_bot', 'db_api': 'data'}
     TAB_BOT = {'data': 'data', 'log': 'log', 'root': 'root'}
+# =============================
     USER_PERMISS = {}
-    DB_CONT = {'login': None, 'name': None, 'passw': None, 'gender': None, 'phone': None, 'email': None}
+# =============================
+    ID = 'id'
+    PAS = 'passw'
+    LOGI = 'login'
+    CHT = 'ch_date'
+    UNAME = 'name'
+    GEND = 'gender'
+    PHONE = 'phone'
+    EMAIL = 'email'
+    DATA_REG = 'reg_date'
+# ==============================
     NAME_FIELD = {}
     NAME_FIELD['id'] = 'ID'
     NAME_FIELD['login'] = 'Логин'
@@ -26,33 +37,45 @@ class Config(object):
     NAME_FIELD['gender'] = 'Пол'
     NAME_FIELD['phone'] = 'Номер телефона'
     NAME_FIELD['email'] = 'Эл.почта'
-#========= Menu ===============
+# ========= Menu ===============
     USER_DATA = 'Данные пользователя'
     CREATE_USER = 'Создание'
     EDIT_PROFILE = 'Редактирование'
     PASSW_RECOV = 'Восстановление'
     SETTING = 'Настройка'
-    BASK_SET = 'Возврат к настройкам'
     UPDATES = 'О приложении'
     FEEDBACK = 'Как связаться'
     MAIN_MENU = 'Главное меню'
     CREATE_DBASE = 'Создать БД'
     DELETE_DBASE = 'Удалить БД'
-    DATABASE_EXISTS = 'БД существует: '
     CREATE_DB_TAB = 'Создать таблицы'
     LIST_TABLES = 'Список таблиц'
 #    DELETE_TABLES = 'Удалить таблицы'
     CREATE_SU_USER = 'Создать админа'
     CHENGE_PASSW_SU = 'Изменить пароль админа'
-#===== Message ================
+    PASSW_EDIT = 'Пароль'
+    PHONE_EDIT = 'Телефон'
+    EMAIL_EDIT = 'Адрес эл.почты'
+    GENDER_EDIT = 'Пол'
+    DELETE_PROF = 'Удалить'
+    # ===== Message ================
     SELECT_MENU = 'Выберите пункт меню: '
     NEW_USER = 'Login нового пользователя:'
+    NEW_PASSW = 'Passwd нового пользователя:'
+    NEW_CREATE = 'Поздравляю, новый пользователь создан'
+    LOGIN_EXISTS = 'Извините, Login существует\nВведите новый Login:'
     LOGIN = 'Login:'
-    LOGIN_ERR = 'Ошибка, Login не существует! Введите Login:'
-    EMAIL = 'Введите номер телефона:'
+    LOGIN_ERR = 'Ошибка!\nLogin не существует\nВведите Login:'
+    UEMAIL = 'Введите адрес эл. почты: \nНапример: \n mail@mail.ru'
+    ERR_EMAIL = 'Извините, вы ввели адрес эл. почты в неверном формате'
+    UPHONE = 'Введите номер телефона: \nНапример: \n79046755643'
+    ERR_PHONE = 'Извините, вы ввели номер телефона в неверном формате'
+    UGENDER = 'Укажите ваш пол'
+    UDELETE = 'Ваша учетная запись удалена'
     PASSW = 'Введите пароль:'
     SUPERUSER = 'Создать админа'
     PASSW_OK = 'Поздравляю, вы ввели верный Login и Passwd'
+    PASSW_ERR = 'Ошибка, Passwd не верный. Введите Passwd:'
     LOGIN_SUPERUSER = 'Введите Login админа'
     PASSW_SUPERUSER = 'Введите пароль админа'
     SU_CREATE = 'Админ создан'
@@ -64,7 +87,6 @@ class Config(object):
     DELET_DB = 'Для удаления БД введите: Удалить БД'
     TAB_OK = 'Таблицы созданы'
     FULL_SET = 'Поздравляю, вы выполнили основные настройки приложения.'
-    PASSW_ERR = 'Ошибка, Passwd не верный. Введите Passwd:'
     NO_ACCESS = 'У вас нет прав: '
     UPDATE = 'Обновления и дополнительная информация: https://t.me/flaskbott'
     QUESTIONS = 'Вопросы и предложения:\n • @jwvsolmf\n • jwvsol@yandex.com'
@@ -72,14 +94,20 @@ class Config(object):
 
 class Status(Enum):
     START = '0'  # Начало нового диалога
-    LOGIN = '1'
-    PASSW = '2'
-    NAME = '3'
+    LOGIN_ROOT = '1'
+    LOGIN_NEW = '11'
+    LOGIN_USER = '100'
+    PASSW_ROOT = '2'
+    PASSW_NEW = '22'
+    PASSW_USER = '200'
+    PASSW_EDIT = '220'
+    EMAIL = '3'
     PHONE = '4'
-    EMAIL = '5'
+    NAME = '5'
     GENDER = '6'
     CHECKED = '7'
     SUPERUSER = '8'
     SUPER_PASS = '9'
     CHENGE_SU = '10'
+    EDIT = '50'
 

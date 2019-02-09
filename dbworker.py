@@ -13,8 +13,9 @@ class UseDB(object):
     def presence_id(self, use_db, name_t, id_mane, req):
         with UseDatabase(self.config) as db:
             try:
+                print(use_db, name_t, id_mane, req)
                 out = db.countid(use_db, name_t, id_mane, req)
-#               print(out)
+                print(out)
                 return out
             except:
                 return False
