@@ -14,7 +14,6 @@ class Config(object):
     DB_CONFIG = { 'host': 'localhost', 'port': 28015, }
     DB_NAME = {'db_bot': 'db_bot', 'db_api': 'data'}
     TAB_BOT = {'data': 'data', 'log': 'log', 'root': 'root'}
-    TAB_API = {'data': 'data', 'log': 'log', 'root': 'root'}
     USER_PERMISS = {}
     DB_CONT = {'login': None, 'name': None, 'passw': None, 'gender': None, 'phone': None, 'email': None}
     NAME_FIELD = {}
@@ -42,7 +41,7 @@ class Config(object):
     DATABASE_EXISTS = 'БД существует: '
     CREATE_DB_TAB = 'Создать таблицы'
     LIST_TABLES = 'Список таблиц'
-    DELETE_TABLES = 'Удалить таблицы'
+#    DELETE_TABLES = 'Удалить таблицы'
     CREATE_SU_USER = 'Создать админа'
     CHENGE_PASSW_SU = 'Изменить пароль админа'
 #===== Message ================
@@ -57,6 +56,7 @@ class Config(object):
     LOGIN_SUPERUSER = 'Введите Login админа'
     PASSW_SUPERUSER = 'Введите пароль админа'
     SU_CREATE = 'Админ создан'
+    SU_CHENGE = 'Пароль админа изменен'
     DB_NO_CREATE = 'БД не создана'
     DB_OK = 'БД успешно создана'
     DB_DEL_OK = 'БД успешно удалена'
@@ -81,4 +81,5 @@ class Status(Enum):
     CHECKED = '7'
     SUPERUSER = '8'
     SUPER_PASS = '9'
+    CHENGE_SU = '10'
 

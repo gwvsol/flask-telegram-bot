@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 from rethinkdbcm import UseDatabase
+from config import Config
+
+USER1 = Config.USER_PERMISS
+#USER1['187911336'] = '1'
 
 class UseDB(object):
     def __init__(self, config: dict):
@@ -88,16 +92,15 @@ class UseDB(object):
             except:
                 return False
 
-# Получение записей из таблицы БД по ID 
-# (при подключении к БД необходимо указать к какой БД подключаемся)
+ # Получение записи о пользователе ROOT в БД
     def getrootuser(self, use_db, use_tab, req):
         with UseDatabase(self.config) as db:
             try:
                 return db.getroot(use_db, use_tab)[req]
             except:
                 return False
-                
-# Получение записи о пользователе ROOT в БД 
+
+# Получение записей из таблицы БД по ID
     def getonetask(self, use_db, use_tab, id_name):
         with UseDatabase(self.config) as db:
             try:
@@ -108,7 +111,6 @@ class UseDB(object):
                 return False
                 
 # Обновление записей в таблице БД по ID 
-# (при подключении к БД необходимо указать к какой БД подключаемся)
     def updateonetask(self, use_db, use_tab, id_name, json):
         with UseDatabase(self.config) as db:
             try:
@@ -117,4 +119,18 @@ class UseDB(object):
                 return out
             except:
                 return False
-            
+
+########################################################################
+# Получение записей из таблицы БД по ID или если БД не доступна, 
+# подменить временно на локальную переменную
+    def getuserid(self, use_db, use_tab, id_name):
+        with UseDatabase(self.config) as db:
+#            print('newidrecord')
+            try:
+                d = db.gettask(use_db, use_tab, id_name)
+                out = d if d else USER1
+#                print(out)
+                return out
+            except:
+                return False
+########################################################################
