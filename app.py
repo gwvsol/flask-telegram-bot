@@ -15,7 +15,6 @@ import re
 logger = telebot.logger
 telebot.logger.setLevel(logging.INFO)
 
-
 app = Flask(__name__)
 app.config.from_object(Config)
 bot = telebot.TeleBot(app.config['API_TOKEN'])
@@ -175,7 +174,7 @@ def handle_text(message):
 
 # ======================================================================
 # =========== Запрос данных пользователя ===============================
-# Запрос Login пользователя
+# ============== Login пользователя ====================================
 @bot.message_handler(func=lambda message: app.config['USER_DATA'] \
     == message.text, content_types=['text'])
 def user_data(message):
@@ -186,7 +185,7 @@ def user_data(message):
     bot.send_message(message.from_user.id, \
         app.config['LOGIN'], reply_markup=user_markup)
 
-# ============== Запрос Passwd пользователя ============================
+# ===================== Passwd пользователя ============================
 @bot.message_handler(func=lambda message:
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.LOGIN_USER.value)
@@ -234,7 +233,7 @@ def get_pass(message):
 # ============= Редактирование пароля пользователя =====================
 @bot.message_handler(func=lambda message:app.config['PASSW_EDIT'] == \
     message.text, content_types=['text'])
-def edit_phone(message):
+def edit_pass(message):
     save_state(id_bot=str(message.chat.id), st=ST.PASSW_EDIT.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
@@ -245,18 +244,30 @@ def edit_phone(message):
 @bot.message_handler(func=lambda message: 
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.PASSW_EDIT.value)
-def edit_phone(message):
-    save_state(id_bot=str(message.chat.id), st=ST.EDIT.value)
+def save_pass(message):
+    js = {}
+    js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+    js[PAS] = setpasswd(js[LOGI], message.text)
+    js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+    DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
+    save_state(id_bot=str(message.chat.id), pas=js[PAS], st=ST.EDIT.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
-    user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
+    user_markup.row(app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
-        app.config['PASSW'], reply_markup=user_markup)
+        app.config['PASSW_EDT'], reply_markup=user_markup)
+    for i in list(DB.getonetask(DB_BOT, TAB_DATA, js[LOGI]).items()):
+        if i[0] == 'passw':
+            bot.send_message(message.from_user.id, \
+                '{}: {}'.format(NAME[i[0]], '**************'))
+        else:
+            bot.send_message(message.from_user.id, \
+                '{}: {}'.format(NAME[i[0]], i[1]))
 
 # =========== Редактирование телефона пользователя =====================
 @bot.message_handler(func=lambda message:app.config['PHONE_EDIT'] == \
     message.text, content_types=['text'])
-def edit_pass(message):
+def edit_phone(message):
     save_state(id_bot=str(message.chat.id), st=ST.EDIT.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
@@ -330,7 +341,7 @@ def new_user(message):
 @bot.message_handler(func=lambda message: 
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.LOGIN_NEW.value)
-def new_passw(message):
+def new_login(message):
     print(DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text)))
     if not DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text.lower())):
         save_state(id_bot=message.chat.id, logn=message.text.lower(), \
@@ -348,7 +359,7 @@ def new_passw(message):
 @bot.message_handler(func=lambda message: 
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.PASSW_NEW.value)
-def new_email(message):
+def new_passw(message):
     usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
     pas = setpasswd(usr[LOGI], message.text)
     save_state(id_bot=message.chat.id, pas=pas, st=ST.EMAIL.value)
@@ -379,7 +390,7 @@ def new_email(message):
 @bot.message_handler(func=lambda message: 
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.PHONE.value)
-def NewUserCreate(message):
+def create_user(message):
     if isValidPhone(message.text):
         save_state(id_bot=message.chat.id, ph=message.text, st=ST.PHONE.value)
         usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
