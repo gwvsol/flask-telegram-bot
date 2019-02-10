@@ -3,7 +3,7 @@ from enum import Enum
 
 class Config(object):
 # ====== debug mode ============
-    DEBUG_MODE = True
+    DEBUG_MODE = False
 # ===== Set Bot Telegram =======
     API_TOKEN = '742304158:AAFeunhPvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
     WEBHOOK_HOST = 'srv00.hldns.ru'
