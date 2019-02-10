@@ -46,9 +46,10 @@ ID, PAS, LOGI, CHT, GEND, PHONE, EMAIL, DATA_REG, UNAME = \
     app.config['EMAIL'], app.config['DATA_REG'], \
     app.config['UNAME']
 
+
 # ============= Сохранение состояния пользователя бота =================
 def save_state(id_bot=None, logn=None, pas=None, st=None, \
-    gend=None, ph=None, em=None, name=None, res=False):
+        gend=None, ph=None, em=None, name=None, res=False):
     s = DB.presence_id(DB_BOT, TAB_LOG, ID, str(id_bot))
     djson = {}  # Пустой временный словарь для данных в таблицу log
     djson[CHT] = datetime.now().strftime("%Y-%m-%d %X")
@@ -74,23 +75,70 @@ def save_state(id_bot=None, logn=None, pas=None, st=None, \
         # Если таблица log в БД нет, пишем все во временную локальную переменную
         if 'the table does not exist' in str(db):
             USER.update(djson)
-    print(djson)
+#    print(djson)
     print(DB.getuserid(DB_BOT, TAB_LOG, str(id_bot)))
+
+
+# =============== Вывод информации о пользователе ======================
+def print_user(db, tab, user_id, msg_id):
+    for i in list(DB.getonetask(db, tab, user_id).items()):
+            if i[0] == 'passw':
+                bot.send_message(msg_id, \
+                    '{}:\n{}'.format(NAME[i[0]], '**************'))
+            else:
+                bot.send_message(msg_id, \
+                    '{}:\n{}'.format(NAME[i[0]], i[1]))
 
 
 # ======================================================================
 # =============== Проверка валидности адреса эл. почты =================
-def isValidEmail(email):
+def valid_email(email):
     if len(email) > 7:
-        if re.match(r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$', email) != None:
+        if re.match(r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$', \
+            email) != None:
             return True
     return False
 # =============== Проверка валидности номера телефона ==================
-def isValidPhone(phone):
+def valid_phone(phone):
     if len(phone) > 7:
-        if re.match(r'^((8|\+7|\+359)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$', phone) != None:
+        if re.match(r'^((8|\+7|\+359)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$', \
+            phone) != None:
             return True
     return False
+
+
+# =============== Проверка сложности пароля ============================
+def password_check(password):
+    """
+    Пароль считается надежным, если:
+        восемь или больше символов длинна
+        включает одну или более цифру
+        имеет один или более специальный символ
+        имеет один или более символ в верхнем регистре
+        имеет один или более символ в нижнем регистре
+    """
+
+    # Проверка длинны пароля, не менее 8 символов
+    length_error = len(password) < 8
+
+    # Проверка на наличие цифр в пароле
+    digit_error = re.search(r"\d", password) is None
+
+    # Провека на наличие символов в верхнем регистре
+    uppercase_error = re.search(r"[A-Z]", password) is None
+
+    # Проверка на наличие символов в нижнем регистре
+    lowercase_error = re.search(r"[a-z]", password) is None
+
+    # Проверка на наличие специальных символов
+    symbol_error = re.search(r"[ !#$%&'()*+,-./[\\\]^_`{|}~"+r'"]', \
+        password) is None
+
+    # Результат проверки
+    password_ok = not ( length_error or digit_error or uppercase_error \
+        or lowercase_error or symbol_error )
+
+    return password_ok
 # ======================================================================
 
 
@@ -127,10 +175,11 @@ def verify(id_bot, username=None, password=None):
         return None
 # ======================================================================
 
+
 #===================== Bot Telegram ====================================
 # Старт бота
 @bot.message_handler(commands=['start'])
-def handle_text(message):
+def start_bot(message):
     save_state(id_bot=str(message.chat.id), st=ST.START.value, res=True)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['USER_DATA'])
@@ -138,6 +187,7 @@ def handle_text(message):
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
     app.config['SELECT_MENU'], reply_markup=user_markup)
+
 
 # ================== Основное меню бота ================================
 @bot.message_handler(func=lambda message: app.config['MAIN_MENU'] == \
@@ -150,11 +200,12 @@ def main_menu(message):
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK']) 
     bot.send_message(message.from_user.id, app.config['SELECT_MENU'], \
         reply_markup=user_markup) 
-    
+
+
 #================== О приложении, как связяться ========================
 @bot.message_handler(func=lambda message: app.config['UPDATES'] == \
     message.text, content_types=['text'])
-def handle_text(message):
+def how_update(message):
     save_state(id_bot=str(message.chat.id), st=ST.START.value, res=True)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
@@ -164,7 +215,7 @@ def handle_text(message):
 
 @bot.message_handler(func=lambda message: app.config['FEEDBACK'] == \
     message.text, content_types=['text'])
-def handle_text(message):
+def how_contact(message):
     save_state(id_bot=str(message.chat.id), st=ST.START.value, res=True)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
@@ -172,9 +223,10 @@ def handle_text(message):
     app.config['QUESTIONS'], reply_markup=user_markup)
 #=======================================================================
 
+
 # ======================================================================
-# =========== Запрос данных пользователя ===============================
-# ============== Login пользователя ====================================
+# ===================== Запрос данных пользователя =====================
+# ======================== Login пользователя ==========================
 @bot.message_handler(func=lambda message: app.config['USER_DATA'] \
     == message.text, content_types=['text'])
 def user_data(message):
@@ -185,11 +237,12 @@ def user_data(message):
     bot.send_message(message.from_user.id, \
         app.config['LOGIN'], reply_markup=user_markup)
 
+
 # ===================== Passwd пользователя ============================
 @bot.message_handler(func=lambda message:
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.LOGIN_USER.value)
-def get_login(message):
+def get_login_user(message):
     if DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text)):
         save_state(id_bot=str(message.chat.id), logn=message.text.lower(), \
         st=ST.PASSW_USER.value)
@@ -202,26 +255,21 @@ def get_login(message):
         bot.send_message(message.from_user.id, app.config['LOGIN_ERR'])
         return
 
+
 # ================= Вывод данных пользователя ==========================
 @bot.message_handler(func=lambda message:
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.PASSW_USER.value)
-def get_pass(message):
+def get_passw_user(message):
     logn = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
     pas = setpasswd(logn, message.text)
     if DB.getuserid(DB_BOT, TAB_DATA, logn)[PAS] == pas:
-        save_state(id_bot=str(message.chat.id), logn=message.text, pas=pas, \
+        save_state(id_bot=str(message.chat.id), logn=logn, pas=pas, \
         st=ST.EDIT.value)
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-        for i in list(DB.getonetask(DB_BOT,TAB_DATA, logn).items()):
-            if i[0] == 'passw':
-                bot.send_message(message.from_user.id, \
-                    '{}: {}'.format(NAME[i[0]], '**************'))
-            else:
-                bot.send_message(message.from_user.id, \
-                    '{}: {}'.format(NAME[i[0]], i[1]))
+        print_user(DB_BOT, TAB_DATA, logn, message.chat.id)
         bot.send_message(message.from_user.id, \
             app.config['SELECT_MENU'], reply_markup=user_markup)
     else:
@@ -231,95 +279,216 @@ def get_pass(message):
 
 # ======================================================================
 # ============= Редактирование пароля пользователя =====================
+# =================== Изменение пароля =================================
 @bot.message_handler(func=lambda message:app.config['PASSW_EDIT'] == \
     message.text, content_types=['text'])
-def edit_pass(message):
+def edit_passw_user(message):
     save_state(id_bot=str(message.chat.id), st=ST.PASSW_EDIT.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'])
     bot.send_message(message.from_user.id, \
         app.config['PASSW'], reply_markup=user_markup)
+
 
 @bot.message_handler(func=lambda message: 
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.PASSW_EDIT.value)
 def save_pass(message):
-    js = {}
-    js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
-    js[PAS] = setpasswd(js[LOGI], message.text)
-    js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
-    DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
-    save_state(id_bot=str(message.chat.id), pas=js[PAS], st=ST.EDIT.value)
-    user_markup = types.ReplyKeyboardMarkup(True, False)
-    user_markup.row(app.config['EDIT_PROFILE'])
-    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-    bot.send_message(message.from_user.id, \
-        app.config['PASSW_EDT'], reply_markup=user_markup)
-    for i in list(DB.getonetask(DB_BOT, TAB_DATA, js[LOGI]).items()):
-        if i[0] == 'passw':
-            bot.send_message(message.from_user.id, \
-                '{}: {}'.format(NAME[i[0]], '**************'))
-        else:
-            bot.send_message(message.from_user.id, \
-                '{}: {}'.format(NAME[i[0]], i[1]))
+    if password_check(message.text):
+        js = {}
+        js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        js[PAS] = setpasswd(js[LOGI], message.text)
+        js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+        DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
+        save_state(id_bot=str(message.chat.id), pas=js[PAS], st=ST.EDIT.value)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['EDIT_PROFILE'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, \
+            app.config['PASSW_USER_EDIT'], reply_markup=user_markup)
+        print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
+    else:
+        bot.send_message(message.from_user.id, app.config['PASSW_SIMPLE'])
+        bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'])
+        bot.send_message(message.from_user.id, app.config['PASSW'])
+        return
+
 
 # =========== Редактирование телефона пользователя =====================
 @bot.message_handler(func=lambda message:app.config['PHONE_EDIT'] == \
     message.text, content_types=['text'])
 def edit_phone(message):
-    save_state(id_bot=str(message.chat.id), st=ST.EDIT.value)
+    save_state(id_bot=str(message.chat.id), st=ST.PHONE.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
         app.config['UPHONE'], reply_markup=user_markup)
 
+
+@bot.message_handler(func=lambda message: 
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.PHONE.value)
+def save_phone(message):
+    if valid_phone(message.text):
+        js = {}
+        js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        js[PHONE] = message.text
+        js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+        DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
+        save_state(id_bot=str(message.chat.id), ph=message.text, st=ST.EDIT.value)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, \
+            app.config['PHONE_EDT'], reply_markup=user_markup)
+        print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
+    else:
+        bot.send_message(message.from_user.id, app.config['PHONE_ERR'])
+        bot.send_message(message.from_user.id, app.config['UPHONE'])
+        return
+
+
 # ======= Редактирование адреса эл. почты пользователя =================
 @bot.message_handler(func=lambda message:app.config['EMAIL_EDIT'] == \
     message.text, content_types=['text'])
 def edit_email(message):
-    save_state(id_bot=str(message.chat.id), st=ST.EDIT.value)
+    save_state(id_bot=str(message.chat.id), st=ST.EMAIL.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
         app.config['UEMAIL'], reply_markup=user_markup)
 
-# =============== Редактирование пола пользователя =====================
+
+@bot.message_handler(func=lambda message: 
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.EMAIL.value)
+def save_email(message):
+    if valid_email(message.text):
+        js = {}
+        js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        js[EMAIL] = message.text
+        js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+        DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
+        save_state(id_bot=str(message.chat.id), em=message.text, st=ST.EDIT.value)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, \
+            app.config['EMAIL_EDT'], reply_markup=user_markup)
+        print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
+    else:
+        bot.send_message(message.from_user.id, app.config['EMAIL_ERR'])
+        bot.send_message(message.from_user.id, app.config['UEMAIL'])
+        return
+
+
+# === Редактирование данных о половой принадлежности пользователя ======
 @bot.message_handler(func=lambda message:app.config['GENDER_EDIT'] == \
     message.text, content_types=['text'])
 def edit_gender(message):
-    save_state(id_bot=str(message.chat.id), st=ST.EDIT.value)
+    save_state(id_bot=str(message.chat.id), st=ST.GENDER.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
         app.config['UGENDER'], reply_markup=user_markup)
 
+
+@bot.message_handler(func=lambda message: 
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.GENDER.value)
+def save_gender(message):
+    js = {}
+    js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+    js[GEND] = message.text
+    js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+    DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
+    save_state(id_bot=str(message.chat.id), gend=message.text, st=ST.EDIT.value)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, \
+        app.config['GENDER_SAVE'], reply_markup=user_markup)
+    print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
+
+
+# =============== Редактирование Ф.И.О пользователя =====================
+@bot.message_handler(func=lambda message:app.config['NAME_EDIT'] == \
+    message.text, content_types=['text'])
+def edit_name(message):
+    save_state(id_bot=str(message.chat.id), st=ST.NAME.value)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, \
+        app.config['UNAME_EDIT'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda message: 
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.NAME.value)
+def save_name(message):
+    js = {}
+    js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+    js[UNAME] = message.text
+    js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+    DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
+    save_state(id_bot=str(message.chat.id), name=message.text, st=ST.EDIT.value)
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.from_user.id, \
+        app.config['UNAME_SAVE'], reply_markup=user_markup)
+    print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
+
+
 # =============== Удаление учетной записи пользователя =================
 @bot.message_handler(func=lambda message:app.config['DELETE_PROF'] == \
     message.text, content_types=['text'])
-def delete_prof(message):
-    save_state(id_bot=str(message.chat.id), st=ST.START.value)
+def delete_request(message):
+    save_state(id_bot=str(message.chat.id), st=ST.DELETE.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
-        app.config['UDELETE'], reply_markup=user_markup)
+        app.config['DEL_CONFIRM'], reply_markup=user_markup)
+
+
+@bot.message_handler(func=lambda message: 
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.DELETE.value)
+def delete_confirm(message):
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    if message.text.lower() == 'да' or message.text.lower() == 'yes':
+        logn = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        DB.deleteonetask(DB_BOT, TAB_DATA, logn)
+        save_state(id_bot=str(message.chat.id), res=True, st=ST.START.value)
+        bot.send_message(message.from_user.id, \
+            app.config['DEL_COMPLITE'], reply_markup=user_markup)
+    else:
+        save_state(id_bot=str(message.chat.id), st=ST.START.value)
+        bot.send_message(message.from_user.id, \
+            app.config['NOT_DELETED'], reply_markup=user_markup)
+
 
 # =============== Изменение данных пользователя ========================
 # ======= Основное меню редактирования данных пользователя =============
 @bot.message_handler(func=lambda message: 
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.EDIT.value)
-def edit_menu(message):
+def edit_profile(message):
     user_markup = types.ReplyKeyboardMarkup(True, False)
-    save_state(id_bot=str(message.chat.id), st=ST.EDIT.value)
-    user_markup.row(app.config['MAIN_MENU'], app.config['PASSW_EDIT'])
+    save_state(id_bot=str(message.chat.id), st=ST.EDIT.value) 
+    user_markup.row(app.config['MAIN_MENU'], app.config['NAME_EDIT'])
     user_markup.row(app.config['PHONE_EDIT'], app.config['EMAIL_EDIT'])
-    user_markup.row(app.config['DELETE_PROF'], app.config['GENDER_EDIT'])
-    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    user_markup.row(app.config['PASSW_EDIT'], app.config['GENDER_EDIT'])
+    user_markup.row(app.config['DELETE_PROF'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
         app.config['SELECT_MENU'], reply_markup=user_markup)
 
@@ -330,12 +499,13 @@ def edit_menu(message):
 @bot.message_handler(func=lambda message: app.config['CREATE_USER'] \
     == message.text, content_types=['text'])
 def new_user(message):
-    save_state(id_bot=message.chat.id, st=ST.LOGIN_NEW.value)
+    save_state(id_bot=str(message.chat.id), st=ST.LOGIN_NEW.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, \
         app.config['NEW_USER'], reply_markup=user_markup)
+
 
 # ============ Сохранение логина и запрос нового пароля ================
 @bot.message_handler(func=lambda message: 
@@ -344,55 +514,66 @@ def new_user(message):
 def new_login(message):
     print(DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text)))
     if not DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text.lower())):
-        save_state(id_bot=message.chat.id, logn=message.text.lower(), \
+        save_state(id_bot=str(message.chat.id), logn=message.text.lower(), \
         st=ST.PASSW_NEW.value)
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
         bot.send_message(message.from_user.id, \
-            app.config['NEW_PASSW'], reply_markup=user_markup)
+            app.config['NEW_PASSW'])
+        bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'], \
+            reply_markup=user_markup)
     else:
         bot.send_message(message.chat.id, app.config['LOGIN_EXISTS'])
         return
+
 
 # ============= Сохранение пароля и запрос адреса эл. почты ============
 @bot.message_handler(func=lambda message: 
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.PASSW_NEW.value)
 def new_passw(message):
-    usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
-    pas = setpasswd(usr[LOGI], message.text)
-    save_state(id_bot=message.chat.id, pas=pas, st=ST.EMAIL.value)
-    user_markup = types.ReplyKeyboardMarkup(True, False)
-    user_markup.row(app.config['MAIN_MENU'])
-    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-    bot.send_message(message.from_user.id, \
-        app.config['UEMAIL'], reply_markup=user_markup)
+    if password_check(message.text):
+        usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
+        pas = setpasswd(usr[LOGI], message.text)
+        save_state(id_bot=str(message.chat.id), pas=pas, st=ST.EMAIL.value)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, \
+            app.config['UEMAIL'], reply_markup=user_markup)
+    else:
+        bot.send_message(message.from_user.id, app.config['PASSW_SIMPLE'])
+        bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'])
+        bot.send_message(message.from_user.id, app.config['PASSW'])
+        return
+
 
 # =========== Сохранение адреса эл. почты и запрос номера телефона =====
 @bot.message_handler(func=lambda message: 
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.EMAIL.value)
 def new_email(message):
-    if isValidEmail(message.text):
-        save_state(id_bot=message.chat.id, em=message.text, st=ST.PHONE.value)
+    if valid_email(message.text):
+        save_state(id_bot=str(message.chat.id), em=message.text, st=ST.PHONE.value)
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
         bot.send_message(message.from_user.id, \
             app.config['UPHONE'], reply_markup=user_markup)
     else:
-        bot.send_message(message.chat.id, app.config['ERR_EMAIL'])
+        bot.send_message(message.chat.id, app.config['EMAIL_ERR'])
         bot.send_message(message.chat.id, app.config['UEMAIL'])
         return
+
 
 # ======= Сохранение номера телефона и создаем нового пользователя =====
 @bot.message_handler(func=lambda message: 
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.PHONE.value)
 def create_user(message):
-    if isValidPhone(message.text):
-        save_state(id_bot=message.chat.id, ph=message.text, st=ST.PHONE.value)
+    if valid_phone(message.text):
+        save_state(id_bot=str(message.chat.id), ph=message.text, st=ST.PHONE.value)
         usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
         new_usr = {}
         new_usr[ID] = usr[LOGI]
@@ -406,26 +587,21 @@ def create_user(message):
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-        for i in list(DB.getonetask(DB_BOT,TAB_DATA, usr[LOGI]).items()):
-            if i[0] == 'passw':
-                bot.send_message(message.from_user.id, \
-                    '{}: {}'.format(NAME[i[0]], '**************'))
-            else:
-                bot.send_message(message.from_user.id, \
-                    '{}: {}'.format(NAME[i[0]], i[1]))
+        print_user(DB_BOT, TAB_DATA, usr[LOGI], message.chat.id)
         bot.send_message(message.from_user.id, \
             app.config['NEW_CREATE'], reply_markup=user_markup)
     else:
-        bot.send_message(message.chat.id, app.config['ERR_PHONE'])
+        bot.send_message(message.chat.id, app.config['PHONE_ERR'])
         bot.send_message(message.chat.id, app.config['UPHONE'])
         return
 # ======================================================================
+
 
 # ======================================================================
 # =========== Восстановление пароля пользователя =======================
 @bot.message_handler(func=lambda message: app.config['PASSW_RECOV'] \
     == message.text, content_types=['text'])
-def main_menu(message):
+def password_recovery_user(message):
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
@@ -435,9 +611,10 @@ def main_menu(message):
 
 # ======================================================================
 # ================= Меню Настройка приложения ==========================
+# Вход только для админа или если нет таблиц в БД по дефолтному паролю root
 @bot.message_handler(commands=['setting'])
-def main_menu(message):
-    save_state(id_bot=message.chat.id, st=ST.LOGIN_ROOT.value, res=True)
+def setting_app(message):
+    save_state(id_bot=str(message.chat.id), st=ST.LOGIN_ROOT.value, res=True)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
@@ -451,7 +628,7 @@ def main_menu(message):
     ST.LOGIN_ROOT.value)
 def user_entering_name(message):
     if verify(str(message.chat.id), username=message.text) == message.text:
-        save_state(id_bot=message.chat.id, logn=message.text, st=ST.PASSW_ROOT.value)
+        save_state(id_bot=str(message.chat.id), logn=message.text, st=ST.PASSW_ROOT.value)
         bot.send_message(message.chat.id, app.config['PASSW'])
     else:
         bot.send_message(message.chat.id, app.config['LOGIN_ERR'])
@@ -467,7 +644,7 @@ def user_entering_passw(message):
     if verify(str(message.chat.id), password=message.text) == \
         setpasswd(usr[LOGI].lower(), message.text):
         passw = setpasswd(usr[LOGI].lower(), message.text)
-        save_state(id_bot=message.chat.id, pas=passw, st=ST.CHECKED.value)
+        save_state(id_bot=str(message.chat.id), pas=passw, st=ST.CHECKED.value)
         bot.send_message(message.chat.id, app.config['PASSW_OK'])
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
@@ -502,12 +679,12 @@ def user_entering_passw(message):
 # ============= Создаем БД для приложения ==============================
 @bot.message_handler(func=lambda message: app.config['CREATE_DBASE'] \
     == message.text, content_types=['text'])
-def set_db(message):
+def creating_database(message):
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     if DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] \
         == ST.CHECKED.value:
-        save_state(id_bot=message.chat.id, st=ST.CHECKED.value)
+        save_state(id_bot=str(message.chat.id), st=ST.CHECKED.value)
         DB.db_creat(DB_BOT)
         if DB_BOT not in DB.db_creat(DB_BOT).keys():
             user_markup.row(app.config['CREATE_DBASE'])
@@ -530,8 +707,8 @@ def set_db(message):
 # ==================== Удаление БД приложения ==========================
 @bot.message_handler(func=lambda message: app.config['DELETE_DBASE'] \
     == message.text, content_types=['text'])
-def set_db(message):
-    save_state(id_bot=message.chat.id, st=ST.CHECKED.value)
+def deleting_database(message):
+    save_state(id_bot=str(message.chat.id), st=ST.CHECKED.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     if DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] \
@@ -561,10 +738,10 @@ def set_db(message):
 # ============= Создаем таблицы в БД для приложения ====================
 @bot.message_handler(func=lambda message: app.config['CREATE_DB_TAB'] \
     == message.text, content_types=['text'])
-def set_tab(message):
+def creating_tables(message):
     if DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] \
         == ST.CHECKED.value:
-        save_state(id_bot=message.chat.id, st=ST.CHECKED.value)
+        save_state(id_bot=str(message.chat.id), st=ST.CHECKED.value)
         user_markup = types.ReplyKeyboardMarkup(True, False)
         user_markup.row(app.config['MAIN_MENU'])
         name = list(app.config['TAB_BOT'].values())
@@ -587,7 +764,7 @@ def set_tab(message):
             bot.send_message(message.from_user.id, \
                 app.config['SELECT_MENU'], reply_markup=user_markup)
         elif t:
-            save_state(id_bot=message.chat.id, st=ST.SUPERUSER.value)
+            save_state(id_bot=str(message.chat.id), st=ST.SUPERUSER.value)
             user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
             bot.send_message(message.from_user.id, app.config['TAB_OK'])
             bot.send_message(message.from_user.id, app.config['SUPERUSER'])
@@ -602,7 +779,7 @@ def set_tab(message):
 # ====================== Перечень таблиц в БД ==========================
 @bot.message_handler(func=lambda message: app.config['LIST_TABLES'] \
     == message.text, content_types=['text'])
-def set_db(message):
+def list_tables(message):
     if DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] \
         == ST.CHECKED.value:
         for m in DB.tab_all(DB_BOT):
@@ -615,30 +792,12 @@ def set_db(message):
             app.config['SELECT_MENU'], reply_markup=user_markup)
 
 
-# Удаление таблиц в БД
-# Функция по удалению таблиц, без удаления БД конфликтует с системой аутентификации
-# Требуется доработка
-#@bot.message_handler(func=lambda message: app.config['DELETE_TABLES'] \
-#    == message.text, content_types=['text'])
-#def set_db(message):
-#    if DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] \
-#        == ST.CHECKED.value:
-#        for m in DB.tab_all(DB_BOT):
-#            DB.tab_delete(DB_BOT, m)
-#            bot.send_message(message.from_user.id, \
-#                'Таблица {} удалена из БД {}'.format(m, DB_BOT))
-#        user_markup = types.ReplyKeyboardMarkup(True, False)
-#        user_markup.row(app.config['MAIN_MENU'], app.config['CREATE_DB_TAB'])
-#        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-#        bot.send_message(message.from_user.id, \
-#            app.config['SELECT_MENU'], reply_markup=user_markup)
-
-
 # =============== Cоздание суперпользователя ===========================
+# ================== Запрос ввода нового Login =========================
 @bot.message_handler(func=lambda message: app.config['CREATE_SU_USER'] \
     == message.text, content_types=['text'])
-def get_login_super(message):
-    save_state(id_bot=message.chat.id, st=ST.SUPERUSER.value)
+def get_login_adm(message):
+    save_state(id_bot=str(message.chat.id), st=ST.SUPERUSER.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
@@ -647,12 +806,12 @@ def get_login_super(message):
         app.config['LOGIN_SUPERUSER'], reply_markup=user_markup)
 
 
-# ============= Запрос Login для создания суперпользователя ============
+# ============= Сохранение нового Login и запрос Passwd ================
 @bot.message_handler(func=lambda message: \
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.SUPERUSER.value)
-def get_pass_super(message):
-    save_state(id_bot=message.chat.id, logn=message.text, st=ST.SUPER_PASS.value)
+def get_passw_adm(message):
+    save_state(id_bot=str(message.chat.id), logn=message.text, st=ST.SUPER_PASS.value)
     bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
 
 
@@ -660,74 +819,75 @@ def get_pass_super(message):
 @bot.message_handler(func=lambda message: \
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.SUPER_PASS.value)
-def set_superuser(message):
-    usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
-    pas = setpasswd(usr[LOGI], message.text)
-    save_state(id_bot=message.chat.id, pas=pas, st=ST.SUPER_PASS.value)
-    usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
-    adm = {}
-    adm['id'] = usr[LOGI].lower()
-    adm['login'] = adm['id']
-    adm['passw'] = usr[PAS]
-    adm['reg_date'] = datetime.now().strftime("%Y-%m-%d %X")
-    adm['ch_date'] = adm['reg_date']
-    DB.new_record(DB_BOT, TAB_ROOT, adm)
-    for i in list(DB.getonetask(DB_BOT, TAB_ROOT, adm['login']).items()):
-        if i[0] == 'passw':
-            bot.send_message(message.from_user.id, \
-                '{}: {}'.format(NAME[i[0]], '**************'))
-        else:
-            bot.send_message(message.from_user.id, \
-                '{}: {}'.format(NAME[i[0]], i[1]))
-    user_markup = types.ReplyKeyboardMarkup(True, False)
-    user_markup.row(app.config['MAIN_MENU'])
-    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-    bot.send_message(message.from_user.id, app.config['SU_CREATE'])
-    bot.send_message(message.chat.id, app.config['SELECT_MENU'], \
-        reply_markup=user_markup)
-        
-        
+def set_passd_superuser(message):
+    if password_check(message.text):
+        usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
+        pas = setpasswd(usr[LOGI], message.text)
+        save_state(id_bot=str(message.chat.id), pas=pas, st=ST.SUPER_PASS.value)
+        usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
+        adm = {}
+        adm[ID] = usr[LOGI].lower()
+        adm[LOGI] = adm[ID]
+        adm[PAS] = usr[PAS]
+        adm[DATA_REG] = datetime.now().strftime("%Y-%m-%d %X")
+        adm[CHT] = adm[DATA_REG]
+        DB.new_record(DB_BOT, TAB_ROOT, adm)
+        print_user(DB_BOT, TAB_ROOT, adm[LOGI], message.chat.id)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, app.config['SU_CREATE'])
+        bot.send_message(message.chat.id, app.config['SELECT_MENU'], \
+            reply_markup=user_markup)
+    else:
+        bot.send_message(message.from_user.id, app.config['PASSW_SIMPLE'])
+        bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'])
+        bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
+        return
+
+
 # ================= Изменение пароля админа ============================
 @bot.message_handler(func=lambda message: app.config['CHENGE_PASSW_SU'] \
     == message.text, content_types=['text'])
-def get_new_pass_super(message):
-    save_state(id_bot=message.chat.id, st=ST.CHENGE_SU.value)
+def edit_passw_adm(message):
+    save_state(id_bot=str(message.chat.id), st=ST.CHENGE_SU.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
     bot.send_message(message.from_user.id, app.config['CHENGE_PASSW_SU'])
     bot.send_message(message.from_user.id, \
         app.config['PASSW_SUPERUSER'], reply_markup=user_markup)
-        
+
 
 # ================== Обновление пароля админа ==========================
 @bot.message_handler(func=lambda message: \
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.CHENGE_SU.value)
-def set_superuser(message):
-    usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
-    pas = setpasswd(usr[LOGI], message.text)
-    save_state(id_bot=message.chat.id, pas=pas, st=ST.CHENGE_SU.value)
-    usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
-    adm = {}
-    adm['passw'] = usr[PAS]
-    adm['ch_date'] = datetime.now().strftime("%Y-%m-%d %X")
-    DB.updateonetask(DB_BOT, TAB_ROOT, usr[LOGI].lower(), adm)
-    for i in list(DB.getonetask(DB_BOT, TAB_ROOT, usr[LOGI].lower()).items()):
-        if i[0] == 'passw':
-            bot.send_message(message.from_user.id, \
-                '{}: {}'.format(NAME[i[0]], '**************'))
-        else:
-            bot.send_message(message.from_user.id, \
-                '{}: {}'.format(NAME[i[0]], i[1]))
-    user_markup = types.ReplyKeyboardMarkup(True, False)
-    user_markup.row(app.config['MAIN_MENU'])
-    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
-    bot.send_message(message.from_user.id, app.config['SU_CHENGE'])
-    bot.send_message(message.chat.id, app.config['SELECT_MENU'], \
-        reply_markup=user_markup)
+def update_passw_superuser(message):
+    if password_check(message.text):
+        usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
+        pas = setpasswd(usr[LOGI], message.text)
+        save_state(id_bot=str(message.chat.id), pas=pas, st=ST.CHENGE_SU.value)
+        usr = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))
+        adm = {}
+        adm[PAS] = usr[PAS]
+        adm[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+        DB.updateonetask(DB_BOT, TAB_ROOT, usr[LOGI].lower(), adm)
+        print_user(DB_BOT, TAB_ROOT, usr[LOGI], message.chat.id)
+        user_markup = types.ReplyKeyboardMarkup(True, False)
+        user_markup.row(app.config['MAIN_MENU'])
+        user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+        bot.send_message(message.from_user.id, app.config['SU_CHENGE'])
+        bot.send_message(message.chat.id, app.config['SELECT_MENU'], \
+            reply_markup=user_markup)
+    else:
+        bot.send_message(message.from_user.id, app.config['PASSW_SIMPLE'])
+        bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'])
+        bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
+        return
 # ======================================================================
 # ======================================================================
+
 
 # ======================================================================
 #============================= Flask ===================================
@@ -749,6 +909,7 @@ time.sleep(0.1)
 # Set webhook
 bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
                     certificate=open(WEBHOOK_SSL_CERT, 'r'))
+
 
 if __name__ == '__main__':
     app.run(host=WEBHOOK_LISTEN,
