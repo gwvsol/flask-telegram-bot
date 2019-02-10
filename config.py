@@ -2,6 +2,8 @@
 from enum import Enum
 
 class Config(object):
+# ====== debug mode ============
+    DEBUG_MODE = True
 # ===== Set Bot Telegram =======
     API_TOKEN = '742304158:AAFeunhPvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
     WEBHOOK_HOST = 'srv00.hldns.ru'
@@ -50,7 +52,6 @@ class Config(object):
     DELETE_DBASE = 'Удалить БД'
     CREATE_DB_TAB = 'Создать таблицы'
     LIST_TABLES = 'Список таблиц'
-#    DELETE_TABLES = 'Удалить таблицы'
     CREATE_SU_USER = 'Создать админа'
     CHENGE_PASSW_SU = 'Изменить пароль админа'
     NAME_EDIT = 'Ф.И.О'
@@ -67,8 +68,10 @@ class Config(object):
     LOGIN_EXISTS = 'Извините, Login существует\nВведите новый Login:'
     LOGIN = 'Login:'
     LOGIN_ERR = 'Ошибка!\nLogin не существует\nВведите Login:'
+    LOGIN_NO_VALID = 'Ошибка!\nLogin короткий,\nили содержит не допустимые символы'
     UGENDER = 'Укажите ваш пол'
     PASSW = 'Введите пароль:'
+    PASSW_NEW = 'Введите новый пароль'
     PASSW_EDT = 'Пароль админа изменен'
     PASSW_OK = 'Поздравляю, вы ввели верный Login и Passwd'
     PASSW_ERR = 'Ошибка, Passwd не верный. Введите Passwd:'
@@ -83,9 +86,11 @@ class Config(object):
     UPHONE = 'Введите номер телефона: \nНапример: \n79046755643\nили\n73832847222'
     PHONE_EDT = 'Номер телефона изменен'
     PHONE_ERR = 'Извините, вы ввели номер телефона в неверном формате'
+    PHONE_NO_USER = 'Извините, указанный вами\nномер телефона не соответствует\nимеющемуся в БД'
     UEMAIL = 'Введите адрес эл. почты: \nНапример: \n mail@mail.ru'
     EMAIL_EDT = 'Адрес электронной почты изменен'
     EMAIL_ERR = 'Извините, вы ввели адрес эл. почты в неверном формате'
+    EMAIL_NO_USER = 'Извините, указаный вами\nадрес эл. почты не соответствует\nимеющемуся в БД'
     UNAME_EDIT = 'Укажите пожалуйста, вашу Фамилию, Имя и Отчество\nОдной строкой, через пробел'
     UNAME_SAVE = 'Ваша Фамилия, Имя и Отчество\nсохранены в Базе данных'
     GENDER_SAVE = 'Данные о вашей половой принадлежности\nсохранены в Базе данных'
@@ -107,6 +112,7 @@ class Config(object):
     NO_ACCESS = 'У вас нет прав: '
     UPDATE = 'Обновления и дополнительная информация: https://t.me/flaskbott'
     QUESTIONS = 'Вопросы и предложения:\n • @jwvsolmf\n • jwvsol@yandex.com'
+    GUIDE_RECOVERY = 'Для восстановления пароля\nследуйте подсказкам гида'
 # ======================================================================
 
 class Status(Enum):
@@ -114,12 +120,18 @@ class Status(Enum):
     LOGIN_ROOT = '1'
     LOGIN_NEW = '11'
     LOGIN_USER = '100'
+    LOGIN_RECOVER = '111'
     PASSW_ROOT = '2'
     PASSW_NEW = '22'
     PASSW_USER = '200'
     PASSW_EDIT = '220'
+    PASSW_RECOVER = '222'
     EMAIL = '3'
+    EMAIL_EDIT = '300'
+    EMAIL_RECOVER = '30'
     PHONE = '4'
+    PHONE_EDIT = '400'
+    PHONE_RECOVER = '40'
     NAME = '5'
     GENDER = '6'
     CHECKED = '7'

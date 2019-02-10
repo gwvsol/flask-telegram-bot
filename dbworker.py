@@ -14,10 +14,7 @@ class UseDB(object):
     def presence_id(self, use_db, name_t, id_mane, req):
         with UseDatabase(self.config) as db:
             try:
-                print(use_db, name_t, id_mane, req)
-                out = db.countid(use_db, name_t, id_mane, req)
-                print(out)
-                return out
+                return db.countid(use_db, name_t, id_mane, req)
             except:
                 return False
 
@@ -26,9 +23,7 @@ class UseDB(object):
     def db_creat(self, use_db):
         with UseDatabase(self.config) as db:
             try:
-                out = db.create_db(use_db)
-#                print(out)
-                return out
+                return db.create_db(use_db)
             except:
                 return False
 
@@ -37,9 +32,7 @@ class UseDB(object):
     def db_delete(self, use_db):
         with UseDatabase(self.config) as db:
             try:
-                out = db.del_db(use_db)
-#                print(out)
-                return out
+                return db.del_db(use_db)
             except:
                 return False
 
@@ -48,9 +41,7 @@ class UseDB(object):
     def tab_creat(self, use_db, use_tab):
         with UseDatabase(self.config) as db:
             try:
-                out = db.create_tab(use_db, use_tab)
-#                print(out)
-                return out
+                return db.create_tab(use_db, use_tab)
             except:
                 return False
 
@@ -59,9 +50,7 @@ class UseDB(object):
     def tab_all(self, use_db):
         with UseDatabase(self.config) as db:
             try:
-                out = db.all_table(use_db)
-#                print(out)
-                return out
+                return db.all_table(use_db)
             except:
                 return False
 
@@ -70,9 +59,7 @@ class UseDB(object):
     def tab_delete(self, use_db, use_tab):
         with UseDatabase(self.config) as db:
             try:
-                out = db.del_tab(use_db, use_tab)
-#                print(out)
-                return out
+                return db.del_tab(use_db, use_tab)
             except:
                 return False
                 
@@ -83,9 +70,7 @@ class UseDB(object):
     def new_record(self, use_db, use_tab, json):
         with UseDatabase(self.config) as db:
             try:
-                out = db.insert(use_db, use_tab, json)
-#                print(out)
-                return out
+                return db.insert(use_db, use_tab, json)
             except:
                 return False
 
@@ -95,9 +80,7 @@ class UseDB(object):
     def getall(self, use_db, use_tab):
         with UseDatabase(self.config) as db:
             try:
-                out = db.gettasks(use_db, use_tab)
-#                print(out)
-                return out
+                return db.gettasks(use_db, use_tab)
             except:
                 return False
 
@@ -115,9 +98,7 @@ class UseDB(object):
     def getonetask(self, use_db, use_tab, id_name):
         with UseDatabase(self.config) as db:
             try:
-                out = db.gettask(use_db, use_tab, id_name)
-#                print(out)
-                return out
+                return db.gettask(use_db, use_tab, id_name)
             except:
                 return False
 
@@ -126,9 +107,7 @@ class UseDB(object):
     def updateonetask(self, use_db, use_tab, id_name, json):
         with UseDatabase(self.config) as db:
             try:
-                out = db.updetask(use_db, use_tab, id_name, json)
-#                print(out)
-                return out
+                return db.updetask(use_db, use_tab, id_name, json)
             except:
                 return False
 
@@ -137,9 +116,7 @@ class UseDB(object):
     def deleteonetask(self, use_db, use_tab, id_name):
         with UseDatabase(self.config) as db:
             try:
-                out = db.delltask(use_db, use_tab, id_name)
-#                print(out)
-                return out
+                return db.delltask(use_db, use_tab, id_name)
             except:
                 return False
 
@@ -151,11 +128,9 @@ class UseDB(object):
 # приложение и нет таблиц в БД)
     def getuserid(self, use_db, use_tab, id_name):
         with UseDatabase(self.config) as db:
-#            print('newidrecord')
             try:
                 d = db.gettask(use_db, use_tab, id_name)
                 out = d if d else USER1
-#                print(out)
                 return out
             except:
                 return False

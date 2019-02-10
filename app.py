@@ -75,8 +75,10 @@ def save_state(id_bot=None, logn=None, pas=None, st=None, \
         # Если таблица log в БД нет, пишем все во временную локальную переменную
         if 'the table does not exist' in str(db):
             USER.update(djson)
-#    print(djson)
-    print(DB.getuserid(DB_BOT, TAB_LOG, str(id_bot)))
+            
+    # Вывод отладочной информации, что пишется в БД таблицу TAB_LOG
+    if app.config['DEBUG_MODE'] and s:
+        print(DB.getuserid(DB_BOT, TAB_LOG, str(id_bot)))
 
 
 # =============== Вывод информации о пользователе ======================
@@ -84,13 +86,20 @@ def print_user(db, tab, user_id, msg_id):
     for i in list(DB.getonetask(db, tab, user_id).items()):
             if i[0] == 'passw':
                 bot.send_message(msg_id, \
-                    '{}:\n{}'.format(NAME[i[0]], '**************'))
+                    '{}: {}'.format(NAME[i[0]], '**************'))
             else:
                 bot.send_message(msg_id, \
-                    '{}:\n{}'.format(NAME[i[0]], i[1]))
+                    '{}: {}'.format(NAME[i[0]], i[1]))
 
 
 # ======================================================================
+# =============== Проверка валидности login =================
+def valid_login(logn):
+    if len(logn) >= 4:
+        if re.match(r'^[a-z0-9\+_-]', logn) != None:
+            return True
+    return False
+
 # =============== Проверка валидности адреса эл. почты =================
 def valid_email(email):
     if len(email) > 7:
@@ -320,7 +329,7 @@ def save_pass(message):
 @bot.message_handler(func=lambda message:app.config['PHONE_EDIT'] == \
     message.text, content_types=['text'])
 def edit_phone(message):
-    save_state(id_bot=str(message.chat.id), st=ST.PHONE.value)
+    save_state(id_bot=str(message.chat.id), st=ST.PHONE_EDIT.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
@@ -330,7 +339,7 @@ def edit_phone(message):
 
 @bot.message_handler(func=lambda message: 
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
-    ST.PHONE.value)
+    ST.PHONE_EDIT.value)
 def save_phone(message):
     if valid_phone(message.text):
         js = {}
@@ -355,7 +364,7 @@ def save_phone(message):
 @bot.message_handler(func=lambda message:app.config['EMAIL_EDIT'] == \
     message.text, content_types=['text'])
 def edit_email(message):
-    save_state(id_bot=str(message.chat.id), st=ST.EMAIL.value)
+    save_state(id_bot=str(message.chat.id), st=ST.EMAIL_EDIT.value)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'], app.config['EDIT_PROFILE'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
@@ -365,11 +374,12 @@ def edit_email(message):
 
 @bot.message_handler(func=lambda message: 
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
-    ST.EMAIL.value)
+    ST.EMAIL_EDIT.value)
 def save_email(message):
     if valid_email(message.text):
+        logn = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
         js = {}
-        js[LOGI] = DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        js[LOGI] = logn
         js[EMAIL] = message.text
         js[CHT] = datetime.now().strftime("%Y-%m-%d %X")
         DB.updateonetask(DB_BOT, TAB_DATA, js[LOGI], js)
@@ -379,7 +389,7 @@ def save_email(message):
         user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
         bot.send_message(message.from_user.id, \
             app.config['EMAIL_EDT'], reply_markup=user_markup)
-        print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
+        print_user(DB_BOT, TAB_DATA, logn, message.chat.id)
     else:
         bot.send_message(message.from_user.id, app.config['EMAIL_ERR'])
         bot.send_message(message.from_user.id, app.config['UEMAIL'])
@@ -416,7 +426,7 @@ def save_gender(message):
     print_user(DB_BOT, TAB_DATA, js[LOGI], message.chat.id)
 
 
-# =============== Редактирование Ф.И.О пользователя =====================
+# =============== Редактирование Ф.И.О пользователя ====================
 @bot.message_handler(func=lambda message:app.config['NAME_EDIT'] == \
     message.text, content_types=['text'])
 def edit_name(message):
@@ -512,8 +522,8 @@ def new_user(message):
         DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
         ST.LOGIN_NEW.value)
 def new_login(message):
-    print(DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text)))
-    if not DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text.lower())):
+    if not DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text.lower())) \
+        and valid_login(str(message.text.lower())):
         save_state(id_bot=str(message.chat.id), logn=message.text.lower(), \
         st=ST.PASSW_NEW.value)
         user_markup = types.ReplyKeyboardMarkup(True, False)
@@ -524,7 +534,10 @@ def new_login(message):
         bot.send_message(message.from_user.id, app.config['PASSW_EXPLAN'], \
             reply_markup=user_markup)
     else:
-        bot.send_message(message.chat.id, app.config['LOGIN_EXISTS'])
+        if not valid_login(str(message.text.lower())):
+            bot.send_message(message.chat.id, app.config['LOGIN_NO_VALID'])
+        else:
+            bot.send_message(message.chat.id, app.config['LOGIN_EXISTS'])
         return
 
 
@@ -599,15 +612,125 @@ def create_user(message):
 
 # ======================================================================
 # =========== Восстановление пароля пользователя =======================
+# ================ Запрос login для восстановления пароля ==============
 @bot.message_handler(func=lambda message: app.config['PASSW_RECOV'] \
     == message.text, content_types=['text'])
-def password_recovery_user(message):
+def recov_get_user(message):
+    save_state(id_bot=str(message.chat.id), st=ST.LOGIN_RECOVER.value, res=True)
     user_markup = types.ReplyKeyboardMarkup(True, False)
     user_markup.row(app.config['MAIN_MENU'])
     user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    bot.send_message(message.chat.id, app.config['GUIDE_RECOVERY'])
     bot.send_message(message.from_user.id, \
-        app.config['EMAIL'], reply_markup=user_markup)
+        app.config['LOGIN'], reply_markup=user_markup)
 
+# == Запрос эл. адреса, проверка валидности login и наличия его в базе =
+@bot.message_handler(func=lambda message: \
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.LOGIN_RECOVER.value)
+def recov_get_email(message):
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    if DB.presence_id(DB_BOT, TAB_DATA, ID, str(message.text.lower())) \
+        and valid_login(str(message.text.lower())):
+        save_state(id_bot=str(message.chat.id), logn=message.text.lower(), \
+        st=ST.EMAIL_RECOVER.value)
+        bot.send_message(message.from_user.id, app.config['UEMAIL'], \
+            reply_markup=user_markup)
+    else:
+        if not valid_login(str(message.text.lower())):
+            bot.send_message(message.chat.id, app.config['LOGIN_NO_VALID'], \
+                reply_markup=user_markup) 
+        else:
+            bot.send_message(message.chat.id, app.config['LOGIN_ERR'], \
+                reply_markup=user_markup)
+        return
+
+# = Запрос телефона, проверка валидности email и проверка наличия в БД =
+@bot.message_handler(func=lambda message: \
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.EMAIL_RECOVER.value)
+def recov_get_phone(message):
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    if valid_email(str(message.text)):
+        usr = DB.getonetask(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        print(usr)
+        email = DB.getonetask(DB_BOT, TAB_DATA, usr)[EMAIL]
+        print(email)
+        if email == str(message.text):
+            save_state(id_bot=str(message.chat.id), em=message.text, \
+            st=ST.PHONE_RECOVER.value)
+            bot.send_message(message.from_user.id, app.config['UPHONE'], \
+                reply_markup=user_markup)
+        else:
+            bot.send_message(message.chat.id, app.config['EMAIL_NO_USER'])
+            bot.send_message(message.from_user.id, app.config['UEMAIL'], \
+                reply_markup=user_markup)
+            return
+    else:
+        bot.send_message(message.chat.id, app.config['EMAIL_ERR'])
+        bot.send_message(message.from_user.id, app.config['UEMAIL'], \
+            reply_markup=user_markup)
+        return
+
+# = Проверка валидности телефона, сравнение его в БД и восстановление пароля =
+@bot.message_handler(func=lambda message: \
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.PHONE_RECOVER.value)
+def recov_get_passw(message):
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    if valid_phone(str(message.text)):
+        usr = DB.getonetask(DB_BOT, TAB_LOG, str(message.chat.id))[LOGI]
+        print(usr)
+        phone = DB.getonetask(DB_BOT, TAB_DATA, usr)[PHONE]
+        print(phone)
+        if phone == str(message.text):
+            save_state(id_bot=str(message.chat.id), ph=message.text, \
+            st=ST.PASSW_RECOVER.value)
+            bot.send_message(message.chat.id, app.config['PASSW_EXPLAN'])
+            bot.send_message(message.from_user.id, app.config['PASSW_NEW'], \
+                reply_markup=user_markup)
+        else:
+            bot.send_message(message.chat.id, app.config['PHONE_NO_USER'])
+            bot.send_message(message.from_user.id, app.config['UPHONE'], \
+                reply_markup=user_markup)
+            return
+    else:
+        bot.send_message(message.chat.id, app.config['PHONE_ERR'])
+        bot.send_message(message.from_user.id, app.config['UPHONE'], \
+            reply_markup=user_markup)
+        return
+
+
+# ====================== Восстановление пароля =========================
+@bot.message_handler(func=lambda message: \
+    DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
+    ST.PASSW_RECOVER.value)
+def recov_passw_user(message):
+    user_markup = types.ReplyKeyboardMarkup(True, False)
+    user_markup.row(app.config['MAIN_MENU'])
+    user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
+    if password_check(str(message.text)):
+        db = DB.getonetask(DB_BOT, TAB_LOG, str(message.chat.id))
+        pssw = {}
+        pssw[PAS] = setpasswd(db[LOGI], str(message.text))
+        pssw[CHT] = datetime.now().strftime("%Y-%m-%d %X")
+        DB.updateonetask(DB_BOT, TAB_DATA, db[LOGI], pssw)
+        print_user(DB_BOT, TAB_DATA, db[LOGI], message.chat.id)
+        save_state(id_bot=str(message.chat.id), pas=pssw[PAS], \
+                st=ST.START.value)
+        bot.send_message(message.from_user.id, app.config['PASSW_USER_EDIT'], \
+            reply_markup=user_markup)
+    else:
+        bot.send_message(message.chat.id, app.config['PASSW_EXPLAN'])
+        bot.send_message(message.from_user.id, app.config['PASSW_NEW'], \
+                reply_markup=user_markup)
+        return
 
 # ======================================================================
 # ================= Меню Настройка приложения ==========================
@@ -714,6 +837,7 @@ def deleting_database(message):
     if DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] \
         == ST.CHECKED.value:
         if DB_BOT not in DB.db_delete(DB_BOT).keys():
+            save_state(id_bot=str(message.chat.id), st=ST.CHECKED.value)
             user_markup.row(app.config['CREATE_DBASE'])
             user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
             bot.send_message(message.from_user.id, \
@@ -721,6 +845,7 @@ def deleting_database(message):
             bot.send_message(message.from_user.id, \
                 app.config['SELECT_MENU'], reply_markup=user_markup)
         else:
+            save_state(id_bot=str(message.chat.id), st=ST.CHECKED.value)
             user_markup.row(app.config['DELETE_DBASE'])
             user_markup.row(app.config['UPDATES'], app.config['FEEDBACK'])
             bot.send_message(message.from_user.id, \
@@ -811,8 +936,11 @@ def get_login_adm(message):
     DB.getuserid(DB_BOT, TAB_LOG, str(message.chat.id))[str(message.chat.id)] == \
     ST.SUPERUSER.value)
 def get_passw_adm(message):
-    save_state(id_bot=str(message.chat.id), logn=message.text, st=ST.SUPER_PASS.value)
-    bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
+    if valid_login(str(message.text.lower())):
+        save_state(id_bot=str(message.chat.id), logn=message.text, st=ST.SUPER_PASS.value)
+        bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
+    else:
+        bot.send_message(message.chat.id, app.config['LOGIN_NO_VALID'])
 
 
 # ============= Запрос Passwd для создания суперпользователя ===========
@@ -886,10 +1014,8 @@ def update_passw_superuser(message):
         bot.send_message(message.from_user.id, app.config['PASSW_SUPERUSER'])
         return
 # ======================================================================
-# ======================================================================
 
 
-# ======================================================================
 #============================= Flask ===================================
 # Process webhook calls
 @app.route(WEBHOOK_URL_PATH, methods=['POST'])
