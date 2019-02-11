@@ -38,7 +38,7 @@ yum -y install python36u-pip
 pip3.6 install --upgrade pip
 
 yum -y install wget
-
+yum -y install screen
 # Устанавливаем репозиторий для установки базы данных RethinkDB
 wget http://download.rethinkdb.com/centos/7/`uname -m`/rethinkdb.repo -O /etc/yum.repos.d/rethinkdb.repo
 # Устанавливаем базу данных RethinkDB
@@ -85,10 +85,91 @@ firewall-cmd --reload # Применяем настройки
 
 Для работы приложения используются самоподписанных сертификаты. Создаем самоподписанный сертификат.
 
+```shell
+Cгенерируем приватный ключ
+openssl genrsa -out webhook_pkey.pem 2048
 
+Сгенерируем самоподписанный сертификат
+openssl req -new -x509 -days 3650 -key webhook_pkey.pem -out webhook_cert.pem
+ВАЖНО! Когда дойдем до Common Name (eg, your name or your server's hostname) []:
+Следует указать IP адрес сервера или доменное имя сервера, на котором будет запущен бот.
 
+```
+Настраиваем Gunicorn
 
+```shell
 
+vim gunicorn.conf
+
+bind = "0.0.0.0:8443" # Порт на котором будет работать приложение
+# или через сокет
+# bind = "unix:/home/proft/projects/blog/run/blog.socket"
+#workers = 2
+workers = 1
+user = "work" # Имя пользователя от которого будет работать приложение
+group = "work" # Группа пользователя от которого будет работать приложение
+logfile = "/var/app_wsgi/bot/gunicorn.log"
+loglevel = "info" #debug
+proc_name = "bot"
+pidfile = "/var/app_wsgi/bot/gunicorn.pid" # Пид файл
+certfile = "webhook_cert.pem" # Сертификаты
+keyfile = "webhook_pkey.pem"
+
+```
+Создать токен согласно документации [Telegram](https://core.telegram.org/bots/api)
+
+Добавить полученный токен в файл ```config.py```
+```shell
+vim config.py
+class Config(object):
+# ====== debug mode ============
+    DEBUG_MODE = True
+# ===== Set Bot Telegram =======
+    API_TOKEN = '742304158:AAFeunhPvTtDsgdgHJKHOIUHG1XU3iJPVNyBbTY'
+```
+
+```shell
+Проверить работу приложения
+screen gunicorn -c gunicorn.conf app:app
+
+```
+Если ошибок нет, настроить работу приложения через systemd.
+
+```shell
+cp flask-bot.service /usr/lib/systemd/system
+vim /usr/lib/systemd/system/flask-bot.service
+
+[Unit]
+Description=uWSGI instance to serve flask-bot project
+After=network.target
+
+[Service]
+User=work   # Здесь необходимо указать пользователя от которого будет выполняться приложение
+Group=work  # Здесь необходимо указать группу пользователя от которого будет выполняться приложение
+WorkingDirectory=/var/app_wsgi/bot              # Исправить пути к директории, где распологается приложение
+Environment="PATH=/var/app_wsgi/bot/venv/bin"   # Исправить пути к директории, где распологается приложение
+ExecStart=/var/app_wsgi/bot/venv/bin/gunicorn -c gunicorn.conf app:app # Исправить пути к директории, где распологается приложение
+
+[Install]
+WantedBy=multi-user.target
+
+# Настройка автозапуска приложения
+systemctl daemon-reload
+systemctl enable flask-bot.service
+
+systemctl start flask-bot.service     # Старт
+systemctl status flask-bot.service    # Проверка статуса работы БД
+systemctl stop flask-bot.service      # Стоп
+systemctl restart flask-bot.service   # Рестарт
+
+```
+
+### Настройка приложения
+***
+Приложение имеет две команды ```start``` и ```setting```. Первая вводится при старте, вторая для настройки и входа в скрытое меню, где необходимо создать базу данных и пользователя администратора.
+По умолчанию логин и пароль администратора root root. После создания нового администратора, дефолтная учетная запись будет отлючена. Если же база данных будет удалена, будет вновь активирована дефолтная учетная запись админитсратора, до тех пор пока не будет создана новая.
+
+Используя меню приложения, можно создать новых пользователей и редактировать их учетные записи и просматривать их.
 ***
 
 
