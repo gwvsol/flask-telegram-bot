@@ -23,7 +23,7 @@ bot = telebot.TeleBot(app.config['API_TOKEN'])
 WEBHOOK_PORT = app.config['WEBHOOK_PORT']
 WEBHOOK_LISTEN = app.config['WEBHOOK_LISTEN']
 WEBHOOK_URL_BASE = 'https://{}:{}'.format(app.config['WEBHOOK_HOST'], app.config['WEBHOOK_PORT'])
-WEBHOOK_URL_PATH = '/%s/'.format(app.config['API_TOKEN'])
+WEBHOOK_URL_PATH = '/{}/'.format(app.config['API_TOKEN'])
 WEBHOOK_SSL_CERT = app.config['WEBHOOK_SSL_CERT']
 WEBHOOK_SSL_PRIV = app.config['WEBHOOK_SSL_PRIV']
 #============ Data Base =========================
@@ -1039,7 +1039,7 @@ bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
 
 if __name__ == '__main__':
     app.run(host=WEBHOOK_LISTEN,
-            port=WEBHOOK_PORT,
+            port=WEBHOOK_PORT, 
             ssl_context=(WEBHOOK_SSL_CERT, WEBHOOK_SSL_PRIV),
             debug=True)
 

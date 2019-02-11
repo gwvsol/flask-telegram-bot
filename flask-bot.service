@@ -1,13 +1,13 @@
 [Unit]
-Description=uWSGI instance to serve flask-uwsgi project
+Description=uWSGI instance to serve flask-bot project
 After=network.target
 
 [Service]
 User=work
 Group=work
-WorkingDirectory=/var/app_wsgi/wsgi
-Environment="PATH=/var/app_wsgi/wsgi/venv/bin"
-ExecStart=/var/app_wsgi/wsgi/venv/bin/uwsgi --ini uwsgi.ini
+WorkingDirectory=/var/app_wsgi/bot
+Environment="PATH=/var/app_wsgi/bot/venv/bin"
+ExecStart=/var/app_wsgi/bot/venv/bin/gunicorn -c gunicorn.conf app:app
 
 [Install]
 WantedBy=multi-user.target
