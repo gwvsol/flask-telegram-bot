@@ -35,7 +35,6 @@ TAB_ROOT = app.config['TAB_BOT']['root']
 ROOT_LOGIN = app.config['ROOT_USER']['login']
 ROOT_PASSW = app.config['ROOT_USER']['passw']
 USER = app.config['USER_PERMISS']
-#USER[187911336] = '1'
 DB = UseDB(DB_CONF)
 ST = Status
 NAME = app.config['NAME_FIELD']
@@ -45,6 +44,7 @@ ID, PAS, LOGI, CHT, GEND, PHONE, EMAIL, DATA_REG, UNAME = \
     app.config['GEND'], app.config['PHONE'], \
     app.config['EMAIL'], app.config['DATA_REG'], \
     app.config['UNAME']
+# ======================================================================
 
 
 # ============= Сохранение состояния пользователя бота =================
