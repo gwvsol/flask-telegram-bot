@@ -5,7 +5,7 @@ class Config(object):
 # ====== debug mode ============
     DEBUG_MODE = True
 # ===== Set Bot Telegram =======
-    API_TOKEN = '742304158:AAFeunhPvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
+    API_TOKEN = '742304158:AAFeunhPFGDGGFDvTtDs7D4bJ8OG1XU3iJPVNyBbTY'
     WEBHOOK_HOST = 'srv00.hldns.ru'
     WEBHOOK_PORT = 8443                    # 443, 80, 88 or 8443 (port need to be 'open')
     WEBHOOK_LISTEN = '0.0.0.0'
